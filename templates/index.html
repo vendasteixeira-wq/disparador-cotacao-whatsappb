@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Disparador de Cotação — Estrela d'Água</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1117;--surf:#161b22;--surf2:#1c2128;--border:#30363d;--accent:#25d366;--accent2:#128c7e;--accent3:#0d5c38;--text:#e6edf3;--muted:#8b949e;--danger:#f85149;--warn:#d29922;--blue:#58a6ff;--purple:#8957e5;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;min-height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:13px 22px;border-bottom:1px solid var(--border);background:var(--surf);position:sticky;top:0;z-index:100}
+.wpp-icon{width:33px;height:33px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wpp-icon svg{width:18px;height:18px;fill:#fff}
+header h1{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700}
+header small{color:var(--muted);font-size:.68rem;display:block;margin-top:1px}
+.google-badge{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--border);cursor:pointer;transition:all .15s}
+.google-badge.ok{color:var(--accent);border-color:var(--accent2);background:#0d2b1f}
+.google-badge.nok{color:var(--warn);border-color:var(--warn);background:#1f1a0d}
+.layout{display:grid;grid-template-columns:1fr 305px;height:calc(100vh - 52px)}
+.left{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surf);flex-shrink:0;overflow-x:auto}
+.tab{padding:9px 15px;cursor:pointer;font-size:11.5px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover:not(.active){color:var(--text)}
+.tab-panel{display:none;flex:1;overflow:hidden;flex-direction:column}
+.tab-panel.active{display:flex}
+/* INSUMOS */
+.insumos-header{padding:9px 13px;border-bottom:1px solid var(--border);background:var(--surf2);flex-shrink:0;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.grupo-select,.search-input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-family:'Inter',sans-serif;font-size:12px;outline:none}
+.grupo-select{cursor:pointer}.search-input{flex:1;min-width:100px}
+.grupo-select:focus,.search-input:focus{border-color:var(--accent)}
+.insumos-actions{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap}
+.btn-sm{font-size:11px;background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);padding:3px 8px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap}
+.btn-sm:hover{color:var(--text);border-color:var(--muted)}
+.btn-sm.green{background:var(--accent3);color:var(--accent);border-color:var(--accent2)}
+.btn-sm.green:hover{background:#0f7040}
+.btn-sm.purple{background:#2d1f4e;color:var(--purple);border-color:var(--purple)}
+.btn-sm.purple:hover{background:#3d2a6e}
+.insumos-table-wrap{flex:1;overflow-y:auto}
+table{width:100%;border-collapse:collapse}
+thead th{position:sticky;top:0;background:var(--surf2);padding:6px 9px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+thead th.r{text-align:right}thead th.c{text-align:center}
+tbody tr{border-bottom:1px solid #21262d;transition:background .1s;cursor:pointer}
+tbody tr:hover{background:var(--surf2)}
+tbody tr.selected{background:#0d2b1f;border-left:3px solid var(--accent)}
+tbody tr:not(.selected){border-left:3px solid transparent}
+td{padding:6px 9px;font-size:12px;vertical-align:middle}
+td.c{text-align:center}td.r{text-align:right}
+td.nome{font-weight:500}td.code{color:var(--muted);font-family:monospace;font-size:10.5px}
+td.unid{color:var(--blue);font-size:10.5px;text-align:center}
+.qtd-input{width:58px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:3px 5px;font-family:'Inter',sans-serif;font-size:11.5px;text-align:center;outline:none}
+.qtd-input:focus{border-color:var(--accent)}
+.row-check{accent-color:var(--accent);width:13px;height:13px;cursor:pointer}
+.selected-bar{padding:6px 13px;border-top:1px solid var(--border);background:var(--surf2);flex-shrink:0;display:flex;align-items:center;gap:9px}
+.badge{background:var(--accent2);color:#fff;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:600}
+/* MENSAGEM */
+.msg-panel{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:11px}
+textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:10px 12px;font-family:'Inter',sans-serif;font-size:12px;line-height:1.65;resize:vertical;outline:none;transition:border-color .2s}
+textarea:focus{border-color:var(--accent)}
+.msg-actions{display:flex;gap:6px;flex-wrap:wrap}
+.tpl-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:4px 9px;font-size:11px;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+.tpl-btn:hover{border-color:var(--accent);color:var(--accent)}
+/* FORM GOOGLE */
+.form-panel{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:13px}
+.form-card{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.form-card-title{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;color:var(--purple);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.form-card-title::before{content:'';display:block;width:3px;height:12px;background:var(--purple);border-radius:2px}
+.form-steps{display:flex;flex-direction:column;gap:8px}
+.step{display:flex;gap:10px;align-items:flex-start;font-size:12px}
+.step-num{width:22px;height:22px;background:var(--purple);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#fff}
+.step-txt{flex:1;line-height:1.5;color:var(--text)}
+.step-txt small{color:var(--muted);font-size:11px;display:block;margin-top:2px}
+.btn-gerar-form{width:100%;padding:11px;background:var(--purple);color:#fff;border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
+.btn-gerar-form:hover{background:#a070ff}
+.btn-gerar-form:disabled{background:#2d1f4e;color:#6040a0;cursor:not-allowed}
+.form-resultado{background:var(--bg);border:1px solid var(--purple);border-radius:7px;padding:13px;display:none}
+.form-resultado .link-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
+.form-resultado .link-row a{color:var(--purple);text-decoration:none;font-weight:500;word-break:break-all}
+.form-resultado .link-row a:hover{text-decoration:underline}
+.copy-btn{background:var(--surf2);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;color:var(--muted);cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif}
+.copy-btn:hover{color:var(--text)}
+.btn-usar-msg{width:100%;padding:9px;background:var(--accent3);color:var(--accent);border:1px solid var(--accent2);border-radius:6px;font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:8px}
+.btn-usar-msg:hover{background:#0f7040}
+/* RIGHT */
+.right{display:flex;flex-direction:column;overflow:hidden}
+.right-section{flex-shrink:0;border-bottom:1px solid var(--border)}
+.section-title{font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:9px 13px 6px;display:flex;align-items:center;gap:7px}
+.section-title::before{content:'';display:block;width:3px;height:11px;background:var(--accent);border-radius:2px}
+.fornec-actions{display:flex;gap:5px;padding:0 13px 7px}
+.contato-list{overflow-y:auto;max-height:210px;padding:0 9px 7px}
+.contato-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg);cursor:pointer;user-select:none;transition:border-color .15s;margin-bottom:4px}
+.contato-item:hover{border-color:var(--accent2)}.contato-item.checked{border-color:var(--accent);background:#0d2b1f}
+input[type="checkbox"]{accent-color:var(--accent);width:13px;height:13px;cursor:pointer;flex-shrink:0}
+.contato-nome{font-weight:500;font-size:12px;flex:1}.contato-num{color:var(--muted);font-size:10px;font-family:monospace}
+.config-row{display:flex;align-items:center;gap:8px;padding:7px 13px}
+.config-row label{color:var(--muted);font-size:11px;white-space:nowrap}
+input[type="number"]{width:55px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 5px;font-family:'Inter',sans-serif;font-size:12px;text-align:center;outline:none}
+input[type="number"]:focus{border-color:var(--accent)}
+.disparar-wrap{padding:9px 13px;flex-shrink:0}
+#btn-enviar{width:100%;padding:11px;background:var(--accent);color:#000;border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+#btn-enviar:hover{background:#1ebe5c}
+#btn-enviar:disabled{background:#1a3d26;color:#4a7a56;cursor:not-allowed}
+.prog-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #21262d;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:var(--accent)}.dot.err{background:var(--danger)}.dot.wait{background:var(--warn)}
+.dot.spin{border:2px solid var(--border);border-top-color:var(--accent);background:transparent;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.log-item{padding:5px 0;border-bottom:1px solid #21262d;font-size:11px}
+.log-data{color:var(--muted);font-size:10px;margin-top:1px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+@media(max-width:720px){.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wpp-icon">
+    <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+  </div>
+  <div><h1>Disparador de Cotação</h1><small>Pousada Estrela d'Água — Porto Seguro</small></div>
+  <div id="google-badge" class="google-badge nok" onclick="abrirSetupGoogle()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    <span id="google-status-txt">Google não configurado</span>
+  </div>
+  <span style="font-size:11px;color:var(--muted);margin-left:8px" id="badge-itens-hdr">0 itens</span>
+</header>
+
+<div class="layout">
+<div class="left">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('insumos',this)">📦 Insumos</div>
+    <div class="tab" onclick="switchTab('mensagem',this)">✉️ Mensagem</div>
+    <div class="tab" onclick="switchTab('forms',this)">📋 Google Forms</div>
+  </div>
+
+  <!-- TAB INSUMOS -->
+  <div class="tab-panel active" id="tab-insumos">
+    <div class="insumos-header">
+      <select class="grupo-select" id="grupo-select" onchange="carregarInsumos()"><option value="">— Grupo —</option></select>
+      <input class="search-input" id="search-input" type="text" placeholder="Buscar..." oninput="filtrarTabela()">
+      <div class="insumos-actions">
+        <button class="btn-sm" onclick="marcarTodos()">Todos</button>
+        <button class="btn-sm" onclick="desmarcarTodos()">Nenhum</button>
+        <button class="btn-sm green" onclick="gerarMensagemEIr()">⚡ Gerar msg</button>
+        <button class="btn-sm purple" onclick="switchTab('forms',document.querySelectorAll('.tab')[2])">📋 Gerar Form</button>
+      </div>
+    </div>
+    <div class="insumos-table-wrap">
+      <table><thead><tr>
+        <th style="width:28px" class="c"></th>
+        <th style="width:52px" class="c">Cód.</th>
+        <th>Insumo</th>
+        <th style="width:50px" class="c">Unid.</th>
+        <th style="width:70px" class="r">Saldo</th>
+        <th style="width:85px" class="c">Qtd. Cotar</th>
+      </tr></thead>
+      <tbody id="insumos-tbody"><tr><td colspan="6" style="text-align:center;padding:28px;color:var(--muted)">Selecione um grupo</td></tr></tbody>
+      </table>
+    </div>
+    <div class="selected-bar">
+      <span class="badge" id="badge-sel-count">0</span>
+      <span style="flex:1;font-size:11px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis" id="selected-preview">Nenhum item selecionado</span>
+      <button class="btn-sm" onclick="limparSelecao()">Limpar</button>
+    </div>
+  </div>
+
+  <!-- TAB MENSAGEM -->
+  <div class="tab-panel" id="tab-mensagem">
+    <div class="msg-panel">
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:500">MENSAGEM DE COTAÇÃO</div>
+        <textarea id="mensagem" rows="13" placeholder="Clique em ⚡ Gerar msg na aba Insumos..."></textarea>
+      </div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:500">TEMPLATES</div>
+        <div class="msg-actions">
+          <button class="tpl-btn" onclick="tpl('padrao')">📋 Padrão</button>
+          <button class="tpl-btn" onclick="tpl('alimentos')">🥩 Alimentos</button>
+          <button class="tpl-btn" onclick="tpl('limpeza')">🧹 Limpeza</button>
+          <button class="tpl-btn" onclick="tpl('bebidas')">🍺 Bebidas</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB GOOGLE FORMS -->
+  <div class="tab-panel" id="tab-forms">
+    <div class="form-panel">
+
+      <div class="form-card">
+        <div class="form-card-title">Como funciona</div>
+        <div class="form-steps">
+          <div class="step"><div class="step-num">1</div><div class="step-txt">Selecione os insumos na aba <strong>Insumos</strong> com as quantidades desejadas<small>Os itens marcados vão para o formulário automaticamente</small></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-txt">Clique em <strong>Gerar Google Forms</strong> abaixo<small>O sistema cria o formulário na sua conta Google e gera o link</small></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-txt">Clique em <strong>Inserir link na mensagem</strong><small>O link do Forms é adicionado à mensagem WhatsApp automaticamente</small></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-txt">Dispare a cotação — o fornecedor clica no link, preenche os preços e envia<small>As respostas chegam em uma planilha Google Sheets na sua conta</small></div></div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-card-title">Gerar formulário</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+          Itens selecionados: <strong style="color:var(--text)" id="form-itens-count">0</strong>
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:4px">Título extra (opcional)</label>
+          <input type="text" id="form-titulo-extra" placeholder="Ex: Bebidas Junho 2026"
+            style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 9px;font-family:Inter,sans-serif;font-size:12px;outline:none">
+        </div>
+        <button class="btn-gerar-form" id="btn-gerar-form" onclick="gerarGoogleForm()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          GERAR GOOGLE FORMS
+        </button>
+
+        <div class="form-resultado" id="form-resultado">
+          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px">✅ Formulário criado!</div>
+          <div class="link-row">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;color:var(--purple)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div style="flex:1;min-width:0"><div style="font-size:10px;color:var(--muted);margin-bottom:2px">Link para o fornecedor</div><a id="form-link-fornec" href="#" target="_blank">—</a></div>
+            <button class="copy-btn" onclick="copiarLink('form-link-fornec')">Copiar</button>
+          </div>
+          <div class="link-row">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;color:var(--accent)"><path d="M3 3h18v18H3zM12 8v4M12 16h.01"/></svg>
+            <div style="flex:1;min-width:0"><div style="font-size:10px;color:var(--muted);margin-bottom:2px">Planilha de respostas</div><a id="form-link-sheet" href="#" target="_blank">—</a></div>
+            <button class="copy-btn" onclick="copiarLink('form-link-sheet')">Abrir</button>
+          </div>
+          <button class="btn-usar-msg" onclick="inserirLinkNaMensagem()">
+            ⚡ Inserir link na mensagem WhatsApp
+          </button>
+        </div>
+      </div>
+
+      <div class="form-card" id="google-setup-card" style="border-color:var(--warn)">
+        <div style="font-size:12px;font-weight:600;color:var(--warn);margin-bottom:8px">⚠️ Google não configurado</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px">
+          Para gerar formulários automáticos, execute o script de configuração <strong style="color:var(--text)">setup_google.py</strong> uma vez:
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-family:monospace;font-size:11.5px;color:var(--blue)">
+          py -3.11 setup_google.py
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">
+          Após configurar, reinicie o servidor e o botão ficará disponível.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /left -->
+
+<!-- RIGHT -->
+<div class="right">
+  <div class="right-section">
+    <div class="section-title">Fornecedores <span class="badge" id="badge-fornec">0</span></div>
+    <div class="fornec-actions">
+      <button class="btn-sm" onclick="selTodos()">Todos</button>
+      <button class="btn-sm" onclick="selNenhum()">Nenhum</button>
+    </div>
+    <div class="contato-list" id="lista-contatos"></div>
+  </div>
+  <div class="right-section">
+    <div class="section-title">Configurações</div>
+    <div class="config-row">
+      <label>⏱ Intervalo (s):</label>
+      <input type="number" id="intervalo" value="12" min="5" max="60">
+      <span style="color:var(--muted);font-size:10px">entre envios</span>
+    </div>
+  </div>
+  <div class="disparar-wrap">
+    <button id="btn-enviar" onclick="disparar()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      DISPARAR COTAÇÃO
+    </button>
+  </div>
+  <div id="prog-wrap" style="padding:0 13px;max-height:150px;overflow-y:auto;display:none"></div>
+  <div class="right-section" style="flex:1;border-bottom:none;overflow:hidden;display:flex;flex-direction:column;min-height:0">
+    <div class="section-title">Histórico</div>
+    <div id="historico-wrap" style="flex:1;overflow-y:auto;padding:5px 13px 9px">
+      <p style="color:var(--muted);font-size:11px">Nenhum disparo ainda.</p>
+    </div>
+  </div>
+</div>
+</div><!-- /layout -->
+
+<script>
+let CONTATOS=[], INSUMOS_ATUAL=[], SELECIONADOS={};
+let FORM_URL='', SHEET_URL='';
+
+// ── TABS ──────────────────────────────────────────
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='forms') atualizarContadorForms();
+}
+
+// ── GOOGLE STATUS ─────────────────────────────────
+async function checkGoogleStatus(){
+  try{
+    const r=await fetch('/google/status');
+    const d=await r.json();
+    const badge=document.getElementById('google-badge');
+    const txt=document.getElementById('google-status-txt');
+    const card=document.getElementById('google-setup-card');
+    const btn=document.getElementById('btn-gerar-form');
+    if(d.configurado){
+      badge.className='google-badge ok';
+      txt.textContent='Google conectado';
+      if(card) card.style.display='none';
+      btn.disabled=false;
+    } else {
+      badge.className='google-badge nok';
+      txt.textContent='Google não configurado';
+      if(card) card.style.display='block';
+      btn.disabled=true;
+    }
+  }catch(e){}
+}
+function abrirSetupGoogle(){
+  alert('Execute no terminal:\n\npy -3.11 setup_google.py\n\nApós configurar, reinicie o servidor.');
+}
+
+// ── GRUPOS E INSUMOS ──────────────────────────────
+async function carregarGrupos(){
+  const r=await fetch('/grupos');
+  const grupos=await r.json();
+  const sel=document.getElementById('grupo-select');
+  sel.innerHTML='<option value="">— Grupo —</option>'+grupos.map(g=>`<option value="${g.id}">${g.nome}</option>`).join('');
+}
+
+async function carregarInsumos(){
+  const gid=document.getElementById('grupo-select').value;
+  document.getElementById('search-input').value='';
+  if(!gid){INSUMOS_ATUAL=[];renderTabela([]);return;}
+  const r=await fetch(`/insumos/${gid}`);
+  INSUMOS_ATUAL=await r.json();
+  renderTabela(INSUMOS_ATUAL);
+}
+
+function filtrarTabela(){
+  const q=document.getElementById('search-input').value.toLowerCase();
+  renderTabela(INSUMOS_ATUAL.filter(i=>i.nome.toLowerCase().includes(q)));
+}
+
+function renderTabela(lista){
+  const tbody=document.getElementById('insumos-tbody');
+  if(!lista.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:26px;color:var(--muted)">Nenhum item</td></tr>';return;}
+  tbody.innerHTML=lista.map(i=>{
+    const sel=SELECIONADOS[i.codigo];
+    const qtd=sel?sel.qtd:'';
+    return `<tr class="${sel?'selected':''}" data-cod="${i.codigo}" onclick="toggleRow(this,${i.codigo})">
+      <td class="c"><input type="checkbox" class="row-check" ${sel?'checked':''} onclick="event.stopPropagation();toggleRow(this.closest('tr'),${i.codigo})"></td>
+      <td class="code c">${i.codigo}</td>
+      <td class="nome">${i.nome}</td>
+      <td class="unid">${i.unidade}</td>
+      <td class="r" style="color:var(--muted);font-size:10.5px">${Number(i.saldo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      <td class="c"><input type="number" class="qtd-input" value="${qtd}" min="0" placeholder="Qtd"
+        onclick="event.stopPropagation()"
+        oninput="setQtd(${i.codigo},${JSON.stringify(i.nome)},${JSON.stringify(i.unidade)},${JSON.stringify(i.grupo||'')},this.value)"></td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleRow(tr,cod){
+  const i=INSUMOS_ATUAL.find(x=>x.codigo===cod);
+  if(!i)return;
+  const cb=tr.querySelector('.row-check');
+  if(SELECIONADOS[cod]){delete SELECIONADOS[cod];tr.classList.remove('selected');if(cb)cb.checked=false;}
+  else{const qtd=tr.querySelector('.qtd-input')?.value||'';SELECIONADOS[cod]={nome:i.nome,unidade:i.unidade,grupo:i.grupo||'',qtd};tr.classList.add('selected');if(cb)cb.checked=true;}
+  atualizarBars();
+}
+function setQtd(cod,nome,unidade,grupo,val){
+  if(SELECIONADOS[cod])SELECIONADOS[cod].qtd=val;
+  else SELECIONADOS[cod]={nome,unidade,grupo,qtd:val};
+  const tr=document.querySelector(`tr[data-cod="${cod}"]`);
+  if(tr){tr.classList.add('selected');const cb=tr.querySelector('.row-check');if(cb)cb.checked=true;}
+  atualizarBars();
+}
+function atualizarBars(){
+  const keys=Object.keys(SELECIONADOS);
+  document.getElementById('badge-sel-count').textContent=keys.length;
+  document.getElementById('badge-itens-hdr').textContent=`${keys.length} iten${keys.length!==1?'s':'s'}`;
+  document.getElementById('selected-preview').textContent=keys.length?keys.map(k=>SELECIONADOS[k].nome.split(' ').slice(0,2).join(' ')).join(', '):'Nenhum item';
+  atualizarContadorForms();
+}
+function atualizarContadorForms(){
+  document.getElementById('form-itens-count').textContent=Object.keys(SELECIONADOS).length;
+}
+function marcarTodos(){INSUMOS_ATUAL.forEach(i=>{if(!SELECIONADOS[i.codigo])SELECIONADOS[i.codigo]={nome:i.nome,unidade:i.unidade,grupo:i.grupo||'',qtd:''};});filtrarTabela();atualizarBars();}
+function desmarcarTodos(){INSUMOS_ATUAL.forEach(i=>delete SELECIONADOS[i.codigo]);filtrarTabela();atualizarBars();}
+function limparSelecao(){SELECIONADOS={};renderTabela(INSUMOS_ATUAL);atualizarBars();}
+
+// ── GERAR MENSAGEM ────────────────────────────────
+function gerarMensagemEIr(){
+  const keys=Object.keys(SELECIONADOS);
+  if(!keys.length){alert('Selecione ao menos um insumo.');return;}
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const linhas=keys.map(k=>{const it=SELECIONADOS[k];const q=it.qtd?`${it.qtd} ${it.unidade}`:`_____ ${it.unidade}`;return `• ${it.nome} | Qtd: ${q} | Preço unit.: R$ _______`;});
+  document.getElementById('mensagem').value=
+`*SOLICITAÇÃO DE COTAÇÃO — Pousada Estrela d'Água*\n📅 Data: ${hoje}\n\nPrezado(a) fornecedor(a),\n\nSolicito cotação para os itens abaixo. Responda com o *preço unitário* de cada item.\n\n*ITENS:*\n${linhas.join('\n')}\n\n• Validade: 5 dias úteis\n• Entrega: Porto Seguro / BA\n• Pagamento: a combinar\n\nAtenciosamente,\n*Departamento de Compras*\nPousada Estrela d'Água — Porto Seguro/BA`;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab')[1].classList.add('active');
+  document.getElementById('tab-mensagem').classList.add('active');
+}
+
+const TEMPLATES={
+  padrao:`*SOLICITAÇÃO DE COTAÇÃO — Pousada Estrela d'Água*\n\nPrezado(a) fornecedor(a),\n\nSolicito cotação:\n\n• _____ | Qtd: _____ | Preço unit.: R$ _______\n\nPrazo: 5 dias | Porto Seguro/BA\n\nDepto. de Compras — Estrela d'Água`,
+  alimentos:`*SOLICITAÇÃO DE COTAÇÃO — Pousada Estrela d'Água*\n📅 ${new Date().toLocaleDateString('pt-BR')}\n\nGêneros alimentícios:\n\n• _____ | Qtd: _____ kg | Preço unit.: R$ _______\n\nDepto. de Compras — Estrela d'Água`,
+  limpeza:`*SOLICITAÇÃO DE COTAÇÃO — Pousada Estrela d'Água*\n📅 ${new Date().toLocaleDateString('pt-BR')}\n\nMaterial de limpeza:\n\n• _____ | Qtd: _____ un | Preço unit.: R$ _______\n\nDepto. de Compras — Estrela d'Água`,
+  bebidas:`*SOLICITAÇÃO DE COTAÇÃO — Pousada Estrela d'Água*\n📅 ${new Date().toLocaleDateString('pt-BR')}\n\nBebidas:\n\n• _____ | Qtd: _____ un | Preço unit.: R$ _______\n\nDepto. de Compras — Estrela d'Água`,
+};
+function tpl(t){document.getElementById('mensagem').value=TEMPLATES[t];}
+
+// ── GOOGLE FORMS ──────────────────────────────────
+async function gerarGoogleForm(){
+  const keys=Object.keys(SELECIONADOS);
+  if(!keys.length){alert('Selecione ao menos um insumo na aba Insumos.');return;}
+  const btn=document.getElementById('btn-gerar-form');
+  btn.disabled=true;
+  btn.innerHTML='<div class="dot spin" style="width:13px;height:13px;border-width:2px;flex-shrink:0"></div> Gerando formulário...';
+
+  const itens=keys.map(k=>({codigo:k,...SELECIONADOS[k]}));
+  const titulo=document.getElementById('form-titulo-extra').value;
+
+  try{
+    const r=await fetch('/google/gerar_form',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({itens,titulo})
+    });
+    const d=await r.json();
+    if(d.erro){alert('Erro: '+d.erro);return;}
+
+    FORM_URL=d.form_url;
+    SHEET_URL=d.sheet_url||'';
+
+    const el=document.getElementById('form-resultado');
+    const linkFornec=document.getElementById('form-link-fornec');
+    const linkSheet=document.getElementById('form-link-sheet');
+    linkFornec.href=d.form_url;
+    linkFornec.textContent=d.form_url;
+    if(d.sheet_url){linkSheet.href=d.sheet_url;linkSheet.textContent='Abrir planilha de respostas';}
+    else{linkSheet.textContent='Planilha não vinculada';}
+    el.style.display='block';
+    el.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }catch(e){alert('Erro de comunicação: '+e.message);}
+
+  btn.disabled=false;
+  btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> GERAR GOOGLE FORMS';
+}
+
+function copiarLink(id){
+  const el=document.getElementById(id);
+  const url=el.href||el.textContent;
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn=el.nextElementSibling;
+    if(btn){const orig=btn.textContent;btn.textContent='✓ Copiado!';setTimeout(()=>btn.textContent=orig,2000);}
+  });
+}
+
+function inserirLinkNaMensagem(){
+  if(!FORM_URL){alert('Gere o formulário primeiro.');return;}
+  const ta=document.getElementById('mensagem');
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  ta.value=
+`*SOLICITAÇÃO DE COTAÇÃO — Pousada Estrela d'Água*\n📅 Data: ${hoje}\n\nPrezado(a) fornecedor(a),\n\nPreencha nosso formulário de cotação clicando no link abaixo. É rápido e fácil — basta informar o preço de cada item que você fornece.\n\n🔗 *${FORM_URL}*\n\n• Validade: 5 dias úteis\n• Entrega: Porto Seguro / BA\n• Pagamento: a combinar\n\nDúvidas: controladoria1@estreladagua.tur.br\n\nAtenciosamente,\n*Departamento de Compras*\nPousada Estrela d'Água — Porto Seguro/BA`;
+  // Ir para aba mensagem
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab')[1].classList.add('active');
+  document.getElementById('tab-mensagem').classList.add('active');
+}
+
+// ── FORNECEDORES ──────────────────────────────────
+async function carregarContatos(){
+  const r=await fetch('/contatos');
+  CONTATOS=await r.json();
+  renderContatos();
+}
+function renderContatos(){
+  document.getElementById('lista-contatos').innerHTML=CONTATOS.map((c,i)=>`
+    <div class="contato-item ${c.ativo?'checked':''}" onclick="toggleContato(${i})">
+      <input type="checkbox" ${c.ativo?'checked':''} onclick="event.stopPropagation();toggleContato(${i})">
+      <div style="flex:1;min-width:0"><div class="contato-nome">${c.nome}</div><div class="contato-num">${c.numero}</div></div>
+    </div>`).join('');
+  document.getElementById('badge-fornec').textContent=CONTATOS.filter(c=>c.ativo).length;
+}
+function toggleContato(i){CONTATOS[i].ativo=!CONTATOS[i].ativo;renderContatos();}
+function selTodos(){CONTATOS.forEach(c=>c.ativo=true);renderContatos();}
+function selNenhum(){CONTATOS.forEach(c=>c.ativo=false);renderContatos();}
+
+// ── DISPARAR ──────────────────────────────────────
+async function disparar(){
+  const mensagem=document.getElementById('mensagem').value.trim();
+  const contatos=CONTATOS.filter(c=>c.ativo);
+  const intervalo=parseInt(document.getElementById('intervalo').value)||12;
+  if(!mensagem){alert('A mensagem está vazia.');return;}
+  if(!contatos.length){alert('Selecione ao menos um fornecedor.');return;}
+
+  const btn=document.getElementById('btn-enviar');
+  btn.disabled=true;
+  btn.innerHTML='<div class="dot spin" style="width:13px;height:13px;border-width:2px;flex-shrink:0"></div> Enviando...';
+
+  const pw=document.getElementById('prog-wrap');
+  pw.style.display='block';
+  pw.innerHTML=contatos.map((c,i)=>`
+    <div class="prog-item" id="pi-${i}">
+      <div class="dot ${i===0?'spin':'wait'}"></div>
+      <span style="flex:1">${c.nome}</span>
+      <span style="font-size:10.5px;color:var(--muted)">${i===0?'Enviando...':'Aguardando'}</span>
+    </div>`).join('');
+
+  try{
+    const r=await fetch('/enviar',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mensagem,contatos,intervalo})});
+    const d=await r.json();
+    if(d.resultados) d.resultados.forEach((r,i)=>{
+      const dot=document.querySelector(`#pi-${i} .dot`);
+      const st=document.querySelector(`#pi-${i} span:last-child`);
+      if(dot) dot.className='dot '+(r.status==='enviado'?'ok':'err');
+      if(st)  st.textContent=r.status==='enviado'?'✅ Enviado':'❌ Erro';
+    });
+    carregarHistorico();
+  }catch(e){alert('Erro: '+e.message);}
+
+  btn.disabled=false;
+  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> DISPARAR COTAÇÃO';
+}
+
+// ── HISTÓRICO ─────────────────────────────────────
+async function carregarHistorico(){
+  try{
+    const r=await fetch('/logs');
+    const logs=await r.json();
+    const el=document.getElementById('historico-wrap');
+    if(!logs.length){el.innerHTML='<p style="color:var(--muted);font-size:11px">Nenhum disparo ainda.</p>';return;}
+    el.innerHTML=logs.slice(0,20).map(l=>`<div class="log-item"><div>${l.contato} <span style="color:var(--accent)">${l.status}</span></div><div class="log-data">${l.data}</div></div>`).join('');
+  }catch(e){}
+}
+
+// ── INIT ──────────────────────────────────────────
+carregarGrupos();
+carregarContatos();
+carregarHistorico();
+checkGoogleStatus();
+setInterval(checkGoogleStatus, 30000);
+</script>
+</body>
+</html>

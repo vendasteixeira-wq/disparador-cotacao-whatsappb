@@ -1,0 +1,14 @@
+# Banco de dados local (não versionar)
+*.db
+
+# Arquivos de ambiente / credenciais
+.env
+*.env
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Ambiente virtual
+venv/
+.venv/
